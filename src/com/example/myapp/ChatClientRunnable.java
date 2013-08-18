@@ -7,9 +7,10 @@ import java.net.Socket;
 import android.os.Handler;
 import android.os.Message;
 
-public class ChatClientRunnable implements Runnable {
+public class ChatClientRunnable extends Thread {
 	private Handler handler;
 	private DataInputStream in;
+	private boolean done = false;
 	
 	public ChatClientRunnable(Handler handler, Socket socket) {
 		this.handler = handler;
@@ -23,7 +24,7 @@ public class ChatClientRunnable implements Runnable {
 	
 	@Override
 	public void run() {
-		while(true) {
+		while(!done) {
 			String input = "";
 			try {
 				input = in.readUTF();
@@ -31,7 +32,7 @@ public class ChatClientRunnable implements Runnable {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			Message message = handler.obtainMessage(MainActivity.MESSAGE_RECEIVED, input);
+			Message message = handler.obtainMessage(ChatActivity.MESSAGE_RECEIVED, input);
 			message.sendToTarget();
 		}
 	}
@@ -43,6 +44,10 @@ public class ChatClientRunnable implements Runnable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	public void stopThread() {
+		done = true;
 	}
 
 }

@@ -17,14 +17,12 @@ import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
 import android.widget.TextView;
 
-public class MainActivity extends Activity {
-	public final static String EXTRA_MESSAGE = "com.example.myapp.MESSAGE";
+public class ChatActivity extends Activity {
 	public final static int MESSAGE_RECEIVED = 0;
 	
 	private Socket socket = null;
 	private DataOutputStream out = null;
-	private ChatClientRunnable client = null;
-	private Thread clientThread = null;
+	private ChatClientRunnable clientThread = null;
 	
 	private Handler handler = new Handler() {
 		@Override
@@ -44,7 +42,7 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
-		new ConnectToServer().execute("192.168.0.3");
+		new ConnectToServer().execute("69.154.247.246");
 	}
 	
 	private void displayMessage(String msg) {
@@ -70,7 +68,10 @@ public class MainActivity extends Activity {
 	 * @throws IOException */
 	public void sendMessage(View view) throws IOException {
 	    // Do something in response to button
-		String message = ((EditText) findViewById(R.id.editMessage)).getText().toString();
+		EditText inputET = (EditText) findViewById(R.id.editMessage); 
+		String message = inputET.getText().toString();
+		inputET.setText("");
+		
 		if(out != null) {
 			out.writeUTF(message);
 			out.flush();
@@ -81,26 +82,23 @@ public class MainActivity extends Activity {
 	protected void onStop() {
 		super.onStop();
 		
+		clientThread.close();
+		clientThread.stopThread();
+		
 		// close socket and output stream
 		try {
+			if(out != null) {
+				out.writeUTF("~bye~");
+				out.flush();
+				out.close();
+			}
 			if(socket != null) {
 				socket.close();
-			}
-			if(out != null) {
-				out.close();
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		client.close();
-		if(clientThread != null) {
-			Thread dummy = clientThread;
-			clientThread = null;
-			dummy.interrupt();
-		}
-		getMainLooper().quit();
 	}
 	
 	private class ConnectToServer extends AsyncTask<String, Void, Void> {
@@ -111,8 +109,7 @@ public class MainActivity extends Activity {
 				socket = new Socket(params[0], 7777);
 				// set up socket and output stream
 				out = new DataOutputStream(socket.getOutputStream());
-				client = new ChatClientRunnable(handler, socket);
-				clientThread = new Thread(client);
+				clientThread = new ChatClientRunnable(handler, socket);
 				clientThread.start();
 			} catch (UnknownHostException e) {
 				// TODO Auto-generated catch block
